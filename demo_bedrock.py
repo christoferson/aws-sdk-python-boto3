@@ -23,10 +23,13 @@ def demo_list_foundation_models(bedrock):
 
 def demo_invoke_model(bedrock_runtime, model_id, prompt):
 
-    body = json.dumps({"prompt": prompt})
+    request = {
+        "prompt": prompt,
+        "temperature": 0.0
+    }
 
-    response = bedrock_runtime.invoke_model(modelId = model_id, body = body)
+    response = bedrock_runtime.invoke_model(modelId = model_id, body = json.dumps(request))
 
     response_body_json = json.loads(response["body"].read())
 
-    print(response_body_json["completions"])
+    print(response_body_json["completions"][0]["data"]["text"])
