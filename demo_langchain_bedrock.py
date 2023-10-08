@@ -11,12 +11,12 @@ def run_demo(session):
 
     bedrock_runtime = session.client('bedrock-runtime', region_name="us-east-1")
 
-    model_id = "ai21.j2-mid-v1"
-    #model_id = "anthropic.claude-v1"
+    #model_id = "ai21.j2-mid-v1"
+    model_id = "anthropic.claude-v1"
     model_kwargs = { "temperature": 0.0 }
     prompt = "What is the diameter of Earth?"
 
-    demo_invoke_model_predict(bedrock_runtime, model_id, model_kwargs, prompt)
+    #demo_invoke_model_predict(bedrock_runtime, model_id, model_kwargs, prompt)
 
     demo_invoke_model_chat(bedrock_runtime, model_id, model_kwargs, prompt)
 
