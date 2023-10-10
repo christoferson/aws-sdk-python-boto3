@@ -26,6 +26,8 @@ def run_demo(session):
     model_kwargs = { "temperature": 0.0 }
 
     vectordb = demo_embeddings_create_vector_db(bedrock_runtime, embeddings_model_id, document_path, vector_db_collection_name, vector_db_path) # Run this once to initialize vector db
+    demo_embeddings_invoke_model_chat(bedrock_runtime, model_id, vectordb, model_kwargs, query)
+
 
 def demo_embeddings_create_vector_db(bedrock_runtime, 
         model_id='amazon.titan-embed-text-v1',
@@ -71,3 +73,56 @@ def demo_embeddings_create_vector_db(bedrock_runtime,
     print(f"Vector Database Initialized. {VECTOR_DB_PATH}")
 
     return db
+
+
+def demo_embeddings_invoke_model_chat(bedrock_runtime, model_id, vectordb, model_kwargs, query):
+
+    print("Call demo_embeddings_invoke_model_chat")
+
+    # 1. Create Prompt Template for Claude
+
+    prompt_template = '''Human: 
+    Text: {context}
+
+    Question: {question}
+
+    Answer the question based on the text provided. If the text doesn't contain the answer, reply that the answer is not available.
+
+    Assistant:
+    '''
+
+    PROMPT = PromptTemplate(
+        template=prompt_template, input_variables=['context', 'question']
+    )
+
+    # 2. Instantiate Claude Bedrock
+
+    llm = Bedrock(
+        client = bedrock_runtime,
+        model_id = model_id,
+        model_kwargs = model_kwargs,
+        verbose=True
+    )
+
+    # 3. Create RetrievalQA
+
+    chain_type_kwargs = {"prompt": PROMPT}
+
+    qa = RetrievalQA.from_chain_type(llm = llm, 
+                                 chain_type = "stuff", 
+                                 retriever = vectordb.as_retriever(), 
+                                 chain_type_kwargs = chain_type_kwargs, 
+                                 return_source_documents = True)
+    
+    # 4. Invoke
+
+    answer = qa(query)
+
+    #print(answer)
+    print()
+    print(f"Query: {answer['query']}")
+    print(f"Answer: {answer['result']}")
+    print("Source Documents: ")
+    for source_document in answer["source_documents"]:
+        print(f"- {source_document.page_content[0:70]}") #print(f"{source_document.page_content[0:50]} {source_document.metadata}")
+    
