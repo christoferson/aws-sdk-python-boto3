@@ -18,12 +18,16 @@ def run_demo(session):
 
     model_id = "stability.stable-diffusion-xl"
 
-    demo_sd_generate_image(bedrock_runtime, model_id, 
-        "xxx.jpg", "photorealistic, highly detailed and intricate, vibrant color, cyberpunk", "photographic",
-        negative_prompts=["", ""])
+    prompt = "sneakers, photorealistic, highly detailed and intricate, vibrant color, cyberpunk"
+
+    negative_prompts = ["", "", ""]
+
+    demo_sd_generate_image_with_reference(bedrock_runtime, model_id, "fw2.jpg", prompt, negative_prompts, "photographic")
 
 
-def demo_sd_generate_image(bedrock_runtime, model_id, reference_imgage_filename, prompt, style_preset="comic-book", negative_prompts = ["", "", ""]):
+def demo_sd_generate_image_with_reference(bedrock_runtime, model_id, reference_imgage_filename, prompt, negative_prompts, style_preset="comic-book"):
+
+    print("Call demo_sd_generate_image_with_reference")
 
     ####
 
@@ -43,7 +47,7 @@ def demo_sd_generate_image(bedrock_runtime, model_id, reference_imgage_filename,
     style_preset = style_preset
     size = 512
 
-    # 
+    # 設定値
     config = {
         "filename": OUTPUT_IMG_PATH,
         "seed": seed,
@@ -73,6 +77,7 @@ def demo_sd_generate_image(bedrock_runtime, model_id, reference_imgage_filename,
     #print(body)
 
     # 
+    print("Generating Image ...")
     response = bedrock_runtime.invoke_model(body=body, modelId=model_id)
 
     # 
@@ -85,7 +90,7 @@ def demo_sd_generate_image(bedrock_runtime, model_id, reference_imgage_filename,
     with open("{}.json".format(OUTPUT_IMG_PATH), "w") as f:
         json.dump(config, f, ensure_ascii = False)
 
-
+    print("Complete")
 
 
 
