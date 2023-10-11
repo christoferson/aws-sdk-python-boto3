@@ -19,13 +19,15 @@ def run_demo(session):
 
     embeddings_model_id = 'amazon.titan-embed-text-v1'
     query = "EC2とはなんですか？"
+    #query = "EC2 にサインアップするにはどうすればよいですか？"
     document_path='embedding/files/ec2_faq.txt'
     vector_db_collection_name='ec2_faq'
     vector_db_path='embedding/vectordb/qdrant'
     model_id = 'anthropic.claude-v1'
     model_kwargs = { "temperature": 0.0 }
 
-    vectordb = demo_embeddings_create_vector_db(bedrock_runtime, embeddings_model_id, document_path, vector_db_collection_name, vector_db_path) # Run this once to initialize vector db
+    #vectordb = demo_embeddings_create_vector_db(bedrock_runtime, embeddings_model_id, document_path, vector_db_collection_name, vector_db_path) # Run this once to initialize vector db
+    vectordb = demo_embeddings_load_vector_db(bedrock_runtime, embeddings_model_id, vector_db_collection_name, vector_db_path)
     demo_embeddings_invoke_model_chat(bedrock_runtime, model_id, vectordb, model_kwargs, query)
 
 
@@ -74,6 +76,31 @@ def demo_embeddings_create_vector_db(bedrock_runtime,
 
     return db
 
+def demo_embeddings_load_vector_db(bedrock_runtime, model_id='amazon.titan-embed-text-v1', vector_db_collection_name='ec2_faq', vector_db_path='embedding/vectordb/qdrant'):
+
+    print("Call demo_embeddings_load_vector_db")
+
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+    VECTOR_DB_PATH = os.path.join(ROOT_DIR, vector_db_path)
+    print("VECTOR_DB_PATH: " + VECTOR_DB_PATH)
+
+    client = qdrant_client.QdrantClient(
+        path=VECTOR_DB_PATH, prefer_grpc=True
+    )
+
+    embeddings = BedrockEmbeddings(
+        client=bedrock_runtime,
+        model_id=model_id
+    )
+
+    db = Qdrant(
+        client=client, collection_name=vector_db_collection_name, 
+        embeddings=embeddings
+    )
+
+    print(f"Loaded Vector Database. {VECTOR_DB_PATH}")
+
+    return db
 
 def demo_embeddings_invoke_model_chat(bedrock_runtime, model_id, vectordb, model_kwargs, query):
 
