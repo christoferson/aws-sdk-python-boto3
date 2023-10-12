@@ -24,7 +24,7 @@ def run_demo(session):
     vector_db_collection_name='ec2_faq'
     vector_db_path='embedding/vectordb/qdrant'
     model_id = 'anthropic.claude-v1'
-    model_kwargs = { "temperature": 0.0 }
+    model_kwargs = { "temperature": 0.0, 'max_tokens_to_sample': 200 }
 
     #vectordb = demo_embeddings_create_vector_db(bedrock_runtime, embeddings_model_id, document_path, vector_db_collection_name, vector_db_path) # Run this once to initialize vector db
     vectordb = demo_embeddings_load_vector_db(bedrock_runtime, embeddings_model_id, vector_db_collection_name, vector_db_path)
@@ -134,10 +134,11 @@ def demo_embeddings_invoke_model_chat(bedrock_runtime, model_id, vectordb, model
     # 3. Create RetrievalQA
 
     chain_type_kwargs = {"prompt": PROMPT}
+    retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": 3}) #search_kwargs.k defines number of ducuments to search
 
     qa = RetrievalQA.from_chain_type(llm = llm, 
                                  chain_type = "stuff", 
-                                 retriever = vectordb.as_retriever(), 
+                                 retriever = retriever, 
                                  chain_type_kwargs = chain_type_kwargs, 
                                  return_source_documents = True)
     
