@@ -14,9 +14,11 @@ def run_demo(session):
 
     #demo_invoke_model(bedrock_runtime, "ai21.j2-mid-v1", "What is the diameter of Earth?")
 
+    demo_invoke_model_anthropic_claude(bedrock_runtime)
+
     model_id = "amazon.titan-embed-text-v1"
 
-    demo_embedding_calculate_with_cosine_similarity(bedrock_runtime, model_id)
+    #demo_embedding_calculate_with_cosine_similarity(bedrock_runtime, model_id)
 
 
 def demo_list_foundation_models(bedrock):
@@ -41,6 +43,28 @@ def demo_invoke_model(bedrock_runtime, model_id, prompt):
 
     print(response_body_json["completions"][0]["data"]["text"])
 
+def demo_invoke_model_anthropic_claude(bedrock_runtime, model_id = "anthropic.claude-v1"):
+
+    print("Call demo_invoke_model_anthropic_claude")
+
+    prompt="""\n\nHuman: What is the diameter of the earth?
+        Assistant:
+    """
+
+    request = {
+        "prompt": prompt,
+        "temperature": 0.0,
+        "top_p": 0.5,
+        "top_k": 300,
+        "max_tokens_to_sample": 2048,
+        "stop_sequences": []
+        }
+
+    response = bedrock_runtime.invoke_model(modelId = model_id, body = json.dumps(request))
+
+    response_body_json = json.loads(response["body"].read())
+
+    print(f"Answer: {response_body_json['completion']}")
 
 def demo_embedding_calculate(bedrock_runtime, model_id, prompt):
 
