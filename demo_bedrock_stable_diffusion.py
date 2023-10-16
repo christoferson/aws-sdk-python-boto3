@@ -17,20 +17,30 @@ def run_demo(session):
     bedrock_runtime = session.client('bedrock-runtime', region_name="us-east-1")
 
     model_id = "stability.stable-diffusion-xl"
+    model_id = "stability.stable-diffusion-xl-v0"
 
-    prompt = "photorealistic, highly detailed and intricate, vibrant color"
+    prompt = """
+    Emma Watson as a powerful mysterious sorceress, casting lightning magic, detailed clothing
+    """
 
     negative_prompts = ["", "", ""]
+    style_preset = "photographic"
+    style_preset = ""
 
-    demo_sd_generate_image_with_reference(bedrock_runtime, model_id, "fw2.jpg", prompt, negative_prompts, "3d-model")
+    #demo_sd_generate_image(bedrock_runtime, model_id, "input.png", "a dog, light smile,cute,character, room")
+    #demo_sd_generate_image(bedrock_runtime, model_id, "kayano-30.jpg", "atheletic, stylish, healthy", "3d-model")
+    #demo_sd_generate_image_with_reference(bedrock_runtime, model_id, "fw2.jpg", prompt, negative_prompts, style_preset)
 
-    #demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, "photographic")
+    demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, "photographic")
 
 ####################
 
-def demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book"):
+def demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
 
-    print("Call demo_sd_generate_image")
+    print(f"Call demo_sd_generate_image | style_preset={style_preset} | cfg_scale={cfg_scale}")
+
+    print(f"PROMPT: {prompt}")
+    print(f"NEG_PROMPT: {negative_prompts}")
 
     ####
 
@@ -39,9 +49,9 @@ def demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, 
     OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
 
-    seed = random.randint(0, 1000)
+    seed = random.randint(0, 800000)
     steps = 50
-    cfg_scale = 30
+    cfg_scale = cfg_scale
     start_schedule = 0.6
     change_prompt = prompt
     negative_prompts = negative_prompts
@@ -106,7 +116,8 @@ def demo_sd_generate_image_with_reference(bedrock_runtime, model_id, reference_i
     file_name, file_extension = os.path.splitext(reference_imgage_filename)
     INPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/in/{}".format(reference_imgage_filename))
     print("INPUT_IMG_PATH: " + INPUT_IMG_PATH)
-    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
+    OUTPUT_IMG_FILENAME = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/out/{}{}".format(OUTPUT_IMG_FILENAME, file_extension))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
 
     seed = random.randint(0, 1000)
@@ -160,20 +171,18 @@ def demo_sd_generate_image_with_reference(bedrock_runtime, model_id, reference_i
 
     # 
     response_image.save(OUTPUT_IMG_PATH)
-    # 
+    #
     with open("{}.json".format(OUTPUT_IMG_PATH), "w") as f:
         json.dump(config, f, ensure_ascii = False)
 
     print("Complete")
 
-
+### Utilities
 
 def image_to_base64(image):
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-
 def base64_to_image(base64_str):
     return Image.open(io.BytesIO(base64.decodebytes(bytes(base64_str, "utf-8"))))
-
