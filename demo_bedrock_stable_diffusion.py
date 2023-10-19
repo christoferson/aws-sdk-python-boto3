@@ -8,6 +8,7 @@ import io
 import datetime
 import random
 from PIL import Image
+import config_stable_diffusion
 
 
 def run_demo(session):
@@ -19,19 +20,9 @@ def run_demo(session):
     model_id = "stability.stable-diffusion-xl"
     model_id = "stability.stable-diffusion-xl-v0"
 
-    prompt = """
-    Emma Watson as a powerful mysterious sorceress, casting lightning magic, detailed clothing
-    """
+    iconfig = config_stable_diffusion.shoe_1A
+    demo_sd_generate_image(bedrock_runtime, model_id, iconfig["text"], iconfig["negative"], iconfig["style"], iconfig["scale"])
 
-    negative_prompts = ["", "", ""]
-    style_preset = "photographic"
-    style_preset = ""
-
-    #demo_sd_generate_image(bedrock_runtime, model_id, "input.png", "a dog, light smile,cute,character, room")
-    #demo_sd_generate_image(bedrock_runtime, model_id, "kayano-30.jpg", "atheletic, stylish, healthy", "3d-model")
-    #demo_sd_generate_image_with_reference(bedrock_runtime, model_id, "fw2.jpg", prompt, negative_prompts, style_preset)
-
-    demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, "photographic")
 
 ####################
 
@@ -49,14 +40,14 @@ def demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, 
     OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
 
-    seed = random.randint(0, 800000)
-    steps = 50
-    cfg_scale = cfg_scale
+    seed = random.randint(0, 8000000)
+    steps = 75 #50
+    #cfg_scale = cfg_scale
     start_schedule = 0.6
     change_prompt = prompt
-    negative_prompts = negative_prompts
-    style_preset = style_preset
-    size = 512
+    #negative_prompts = negative_prompts
+    #style_preset = style_preset
+    size = 1024
 
     # 
     config = {
@@ -67,20 +58,26 @@ def demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, 
         "cfg_scale": cfg_scale,
         "start_schedule": start_schedule,
         "style_preset": style_preset,
-        "size": size
+        "size": size,
+        "negative_prompts": negative_prompts
     }
 
     # 
     body = json.dumps(
         {
-            "text_prompts": [{"text": config["change_prompt"], "weight": 1.0}],
+            "text_prompts": (
+                [{"text": config["change_prompt"], "weight": 1.0}]
+                + [{"text": negprompt, "weight": -1.0} for negprompt in negative_prompts]
+            ),
             "cfg_scale": config["cfg_scale"],
             "seed": config["seed"],
-            "start_schedule": config["start_schedule"],
+            #"start_schedule": config["start_schedule"],
             "steps": config["steps"],
             "style_preset": config["style_preset"]
         }
     )
+
+    print(body)
 
     #print(body)
 
