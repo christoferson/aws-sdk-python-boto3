@@ -7,6 +7,7 @@ from typing import Union, Tuple
 import os
 import datetime
 import config
+import random
 
 import config_stable_diffusion
 
@@ -34,7 +35,6 @@ def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
     print(f"Call query_endpoint_with_json_payload payload={payload}")
 
-    
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     OUTPUT_IMG_FILENAME = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "sagemaker/stable-diffusion/out/{}{}".format(OUTPUT_IMG_FILENAME, ".png"))
@@ -51,6 +51,9 @@ def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
     response_image.save(OUTPUT_IMG_PATH)
 
+    with open("{}.json".format(OUTPUT_IMG_PATH), "w") as f:
+        json.dump(payload, f, ensure_ascii = False)
+
     return generated_image_base64
 
 
@@ -59,19 +62,24 @@ def demo_sagemaker_sd_generate_image(session, endpoint_name):
 
     print(f"Call demo_sagemaker_sd_generate_image")
 
+    iconfig = config_stable_diffusion.shoe_1B
+    #text = "jaguar in the Amazon rainforest"
+    text = iconfig["text"]
+
     payload = {
-        "text_prompts":[{"text": "jaguar in the Amazon rainforest"}],
+        "text_prompts":[{"text": text, "weight": 1}],
         "width": 1024,
         "height": 1024,
         "sampler": "DPMPP2MSampler",
         "cfg_scale": 7.0,
         "steps": 50,
-        "seed": 133,
+        "seed": random.randint(0, 1000), #133,
         "use_refiner": True,
         "refiner_steps": 40,
-        "refiner_strength": 0.2
+        "refiner_strength": 0.2,
+        "style_preset": "origami",
     }
-
+    
     cmn_sagemaker_sd_generate_image(session, endpoint_name, payload)
 
     print("END")
