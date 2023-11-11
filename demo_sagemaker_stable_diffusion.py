@@ -6,6 +6,7 @@ import boto3
 from typing import Union, Tuple
 import os
 import datetime
+import config
 
 import config_stable_diffusion
 
@@ -13,25 +14,25 @@ def run_demo(session):
 
     bedrock = session.client('bedrock')
 
-    bedrock_runtime = session.client('bedrock-runtime', region_name="us-east-1")
+    sagemaker_region_name = config.sagemaker["region_name"]
+    sagemaker_endpoint_name = config.sagemaker["endpoint_name"]
 
+    bedrock_runtime = session.client('bedrock-runtime', region_name="us-east-1")
+    sagemaker_runtime = session.client('runtime.sagemaker')
+    
+    
     model_id = "stability.stable-diffusion-xl"
     model_id = "stability.stable-diffusion-xl-v0"
 
     iconfig = config_stable_diffusion.shoe_1A
-    #demo_sd_generate_image(bedrock_runtime, model_id, iconfig["text"], iconfig["negative"], iconfig["style"], iconfig["scale"])
-    demo_sd_generate_image(session)
+    demo_sagemaker_sd_generate_image(sagemaker_runtime, sagemaker_endpoint_name)
 
 
 ####################
 
-endpoint_name = 'jumpstart-dft-stabilityai-stable-diffusion-xl-base-1-0'
-
-def query_endpoint_with_json_payload(session, payload):
+def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
     print(f"Call query_endpoint_with_json_payload payload={payload}")
-
-    client = session.client('runtime.sagemaker')
 
     
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -39,30 +40,24 @@ def query_endpoint_with_json_payload(session, payload):
     OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "sagemaker/stable-diffusion/out/{}{}".format(OUTPUT_IMG_FILENAME, ".png"))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
 
-    response = client.invoke_endpoint(EndpointName=endpoint_name, ContentType='application/json', 
+    response = sagemaker_runtime.invoke_endpoint(EndpointName=endpoint_name, ContentType='application/json', 
                                       Body=json.dumps(payload).encode('utf-8'), Accept='application/json')
     
     response_dict = json.loads(response['Body'].read())
 
-    generated_image = response_dict['generated_image']
+    generated_image_base64 = response_dict['generated_image']
 
-    #with Image.open(io.BytesIO(base64.b64decode(model_response))) as image:
-        #display(image)
-
-
-    response_image = base64_to_image(generated_image)
+    response_image = base64_to_image(generated_image_base64)
 
     response_image.save(OUTPUT_IMG_PATH)
 
-    return generated_image
+    return generated_image_base64
 
 
 
-def demo_sd_generate_image(session):
+def demo_sagemaker_sd_generate_image(session, endpoint_name):
 
-    print(f"Call demo_sd_generate_image")
-
-
+    print(f"Call demo_sagemaker_sd_generate_image")
 
     payload = {
         "text_prompts":[{"text": "jaguar in the Amazon rainforest"}],
@@ -77,7 +72,7 @@ def demo_sd_generate_image(session):
         "refiner_strength": 0.2
     }
 
-    query_endpoint_with_json_payload(session, payload=payload)
+    cmn_sagemaker_sd_generate_image(session, endpoint_name, payload)
 
     print("END")
 
