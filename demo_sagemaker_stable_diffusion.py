@@ -20,16 +20,36 @@ def run_demo(session):
 
     bedrock_runtime = session.client('bedrock-runtime', region_name="us-east-1")
     sagemaker_runtime = session.client('runtime.sagemaker')
-    
+    sagemaker = session.client('sagemaker', region_name="us-east-1")
+
+
     
     model_id = "stability.stable-diffusion-xl"
     model_id = "stability.stable-diffusion-xl-v0"
 
+    #role = sagemaker.get_execution_role()
+    #print(role)
+
+    #cmn_cleanup_delete_endpoints()
+
     iconfig = config_stable_diffusion.shoe_1A
-    demo_sagemaker_sd_generate_image(sagemaker_runtime, sagemaker_endpoint_name)
+    #demo_sagemaker_sd_generate_image(sagemaker_runtime, sagemaker_endpoint_name)
 
 
 ####################
+
+def cmn_cleanup_delete_endpoints(sagemaker):
+    print(f"Listing Endpoints:")
+    #result = sagemaker.list_endpoints(StatusEquals='InService') # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
+    result = sagemaker.list_endpoints() # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
+    print(result)
+    for Endpoint in result['Endpoints']:
+        endpoint_name = Endpoint.EndpointName
+        print(f"Deleting Endpoint: {endpoint_name}")
+        result = sagemaker.delete_endpoint(EndpointName=endpoint_name)
+        print(result)
+        print()
+    print("Cleanup End")
 
 def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
