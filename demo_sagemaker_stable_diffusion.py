@@ -62,9 +62,10 @@ def demo_sagemaker_sd_generate_image(session, endpoint_name):
 
     print(f"Call demo_sagemaker_sd_generate_image")
 
-    iconfig = config_stable_diffusion.shoe_1B
+    iconfig = config_stable_diffusion.shoe_1A
     #text = "jaguar in the Amazon rainforest"
     text = iconfig["text"]
+    negative_prompts = iconfig["negative"]
 
     payload = {
         "text_prompts":[{"text": text, "weight": 1}],
@@ -78,8 +79,9 @@ def demo_sagemaker_sd_generate_image(session, endpoint_name):
         "refiner_steps": 40,
         "refiner_strength": 0.2,
         "style_preset": "origami",
+        "negative": negative_prompts
     }
-    
+
     cmn_sagemaker_sd_generate_image(session, endpoint_name, payload)
 
     print("END")
