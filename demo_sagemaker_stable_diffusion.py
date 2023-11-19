@@ -30,6 +30,7 @@ def run_demo(session):
     #role = sagemaker.get_execution_role()
     #print(role)
 
+    cmn_list_models(sagemaker)
     #cmn_cleanup_delete_endpoints()
 
     iconfig = config_stable_diffusion.shoe_1A
@@ -38,8 +39,21 @@ def run_demo(session):
 
 ####################
 
+def cmn_list_models(sagemaker):
+    print(f"cmn_list_models")
+    #result = sagemaker.list_endpoints(StatusEquals='InService') # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
+    result = sagemaker.list_models(MaxResults = 3, NameContains="stable-d") # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
+    print(result)
+    for Model in result['Models']:
+        print(Model)
+    
+def cmn_create_deploy_endpoints(sagemaker):
+    print(f"cmn_create_deploy_endpoints")
+    print("TODO")
+
+
 def cmn_cleanup_delete_endpoints(sagemaker):
-    print(f"Listing Endpoints:")
+    print(f"cmn_cleanup_delete_endpoints")
     #result = sagemaker.list_endpoints(StatusEquals='InService') # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
     result = sagemaker.list_endpoints() # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
     print(result)
