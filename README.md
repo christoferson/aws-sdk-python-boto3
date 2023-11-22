@@ -67,3 +67,9 @@ LangChain
 ### Links
 
 - [invoke_model](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-runtime/client/invoke_model.html)
+
+- [blip2-git](https://github.com/aws-samples/amazon-sagemaker-genai-content-moderation/blob/main/blip2-sagemaker.ipynb)
+
+- [blip2](https://aws.amazon.com/jp/blogs/machine-learning/build-a-generative-ai-based-content-moderation-solution-on-amazon-sagemaker-jumpstart/)
+
+- https://github.com/AUTOMATIC1111/stable-diffusion-webui

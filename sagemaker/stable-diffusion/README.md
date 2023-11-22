@@ -74,3 +74,7 @@ Aenoising process is called sampling because Stable Diffusion generates a new sa
 - [Git aws-jumpstart-examples](https://github.com/Stability-AI/aws-jumpstart-examples)
 
 - [SDK](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker-runtime.html)
+
+- https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints-delete-resources.html
+
+- https://boto3.amazonaws.com/v1/documentation/api/1.26.93/reference/services/sagemaker.html
