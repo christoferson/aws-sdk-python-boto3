@@ -30,8 +30,9 @@ def run_demo(session):
     #role = sagemaker.get_execution_role()
     #print(role)
 
-    cmn_list_models(sagemaker)
+    #cmn_list_models(sagemaker)
     #cmn_cleanup_delete_endpoints()
+    cmn_cleanup_delete_endpoints(sagemaker)
 
     iconfig = config_stable_diffusion.shoe_1A
     #demo_sagemaker_sd_generate_image(sagemaker_runtime, sagemaker_endpoint_name)
@@ -58,7 +59,7 @@ def cmn_cleanup_delete_endpoints(sagemaker):
     result = sagemaker.list_endpoints() # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
     print(result)
     for Endpoint in result['Endpoints']:
-        endpoint_name = Endpoint.EndpointName
+        endpoint_name = Endpoint['EndpointName']
         print(f"Deleting Endpoint: {endpoint_name}")
         result = sagemaker.delete_endpoint(EndpointName=endpoint_name)
         print(result)
@@ -101,18 +102,19 @@ def demo_sagemaker_sd_generate_image(session, endpoint_name):
     text = iconfig["text"]
     negative_prompts = iconfig["negative"]
 
+    # 1024x1024
     payload = {
         "text_prompts":[{"text": text, "weight": 1}],
-        "width": 1024,
-        "height": 1024,
+        "width": 1152,
+        "height": 896,
         "sampler": "DPMPP2MSampler",
         "cfg_scale": 7.0,
         "steps": 50,
-        "seed": random.randint(0, 1000), #133,
+        "seed": random.randint(0, 4294967295), #133,
         "use_refiner": True,
         "refiner_steps": 40,
         "refiner_strength": 0.2,
-        "style_preset": "origami",
+        #"style_preset": "origami",
         "negative": negative_prompts
     }
 
