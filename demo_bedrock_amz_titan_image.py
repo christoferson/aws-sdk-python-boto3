@@ -22,15 +22,18 @@ def run_demo(session):
 
     model_id = "amazon.titan-image-generator-v1:0"
     
-    iconfig = config_amz_titan_image.shoe_2A
-    demo_titan_v1_generate_image(bedrock_runtime, model_id, iconfig["text"], iconfig["negative"], iconfig["style"], iconfig["scale"])
+    iconfig = config_amz_titan_image.shoe_2B
+    demo_titan_v1_generate_image(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative_text"].strip(), iconfig["quality"], iconfig["style"], iconfig["scale"])
 
 
 ####################
 
-####################
-
-def demo_titan_v1_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
+def demo_titan_v1_generate_image(bedrock_runtime, model_id, 
+                                 prompt : str, 
+                                 negative_prompts : str, 
+                                 quality : str ="standard",
+                                 style_preset="comic-book", 
+                                 cfg_scale : float = 8.0):
 
     print(f"Call demo_titan_v1_generate_image | style_preset={style_preset} | cfg_scale={cfg_scale}")
 
@@ -41,16 +44,13 @@ def demo_titan_v1_generate_image(bedrock_runtime, model_id, prompt, negative_pro
 
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     file_extension = ".png"
-    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
+    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "titan-image/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
 
-    seed = random.randint(0, 4294967295)
+    seed = random.randint(0, 214783647)
     steps = 30 #50
-    #cfg_scale = cfg_scale
     start_schedule = 0.6
     change_prompt = prompt
-    #negative_prompts = negative_prompts
-    #style_preset = style_preset
     size = 1024
 
     # 
@@ -60,34 +60,31 @@ def demo_titan_v1_generate_image(bedrock_runtime, model_id, prompt, negative_pro
         "change_prompt": change_prompt,
         "steps": steps,
         "cfg_scale": cfg_scale,
-        "start_schedule": start_schedule,
-        "style_preset": style_preset,
         "size": size,
+        "quality": quality,
         "negative_prompts": negative_prompts
     }
 
     # 
     body = json.dumps(
         {
-            "text_prompts": (
-                [{"text": config["change_prompt"]}]
-                #[{"text": config["change_prompt"], "weight": 1.0}]
-                #+ [{"text": negprompt, "weight": -1.0} for negprompt in negative_prompts]
-            ),
-            "cfg_scale": config["cfg_scale"],
-            #"clip_guidance_preset"
-            #"height": "1024",
-            #"width": "1024",
-            "seed": config["seed"],
-            #"start_schedule": config["start_schedule"],
-            "steps": config["steps"],
-            #"style_preset": config["style_preset"]
+            "taskType": "TEXT_IMAGE",
+            "textToImageParams": {
+                "text": config["change_prompt"],
+                "negativeText": negative_prompts,
+            },
+            "imageGenerationConfig": {
+                "cfgScale": config["cfg_scale"], #8, #Range: 1.0 (exclusive) to 10.0
+                "seed": config["seed"], #Range: 0 to 214783647
+                "quality": quality, #Options: standard/premium
+                "width": 1024,
+                "height": 1024,
+                "numberOfImages": 1 #Range: 1 to 5
+            }
         }
     )
 
-    print(body)
-
-    #print(body)
+    print(json.dumps(body, indent=2))
 
     # 
     print("Generating Image ...")
@@ -95,7 +92,9 @@ def demo_titan_v1_generate_image(bedrock_runtime, model_id, prompt, negative_pro
 
     # 
     response_body = json.loads(response.get("body").read())
-    response_image = base64_to_image(response_body["artifacts"][0].get("base64"))
+    print(response_body.keys())
+    response_image = base64_to_image(response_body["images"][0])
+    #response_image = base64_to_image(response_body["images"][0].get("base64"))
 
     # 
     response_image.save(OUTPUT_IMG_PATH)
@@ -104,80 +103,6 @@ def demo_titan_v1_generate_image(bedrock_runtime, model_id, prompt, negative_pro
         json.dump(config, f, ensure_ascii = False)
 
     print("Complete")
-
-
-def demo_sd_generate_image_multi_prompt(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
-
-    print(f"Call demo_sd_generate_image | style_preset={style_preset} | cfg_scale={cfg_scale}")
-
-    print(f"PROMPT: {prompt}")
-    print(f"NEG_PROMPT: {negative_prompts}")
-
-    ####
-
-    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-    file_extension = ".png"
-    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
-    print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
-
-    seed = random.randint(0, 8000000)
-    steps = 75 #50
-    #cfg_scale = cfg_scale
-    start_schedule = 0.6
-    change_prompt = prompt
-    #negative_prompts = negative_prompts
-    #style_preset = style_preset
-    size = 1024
-
-    # 
-    config = {
-        "filename": OUTPUT_IMG_PATH,
-        "seed": seed,
-        "change_prompt": change_prompt,
-        "steps": steps,
-        "cfg_scale": cfg_scale,
-        "start_schedule": start_schedule,
-        "style_preset": style_preset,
-        "size": size,
-        "negative_prompts": negative_prompts
-    }
-
-    # 
-    body = json.dumps(
-        {
-            "text_prompts": (
-                [{"text": config["change_prompt"], "weight": 0.5}]
-                + [{"text": "Casio GShock themed Sneakers", "weight": 0.5}]
-                + [{"text": negprompt, "weight": -1.0} for negprompt in negative_prompts]
-            ),
-            "cfg_scale": config["cfg_scale"],
-            "seed": config["seed"],
-            #"start_schedule": config["start_schedule"],
-            "steps": config["steps"],
-            "style_preset": config["style_preset"]
-        }
-    )
-
-    print(body)
-
-    #print(body)
-
-    # 
-    print("Generating Image ...")
-    response = bedrock_runtime.invoke_model(body=body, modelId=model_id)
-
-    # 
-    response_body = json.loads(response.get("body").read())
-    response_image = base64_to_image(response_body["artifacts"][0].get("base64"))
-
-    # 
-    response_image.save(OUTPUT_IMG_PATH)
-    # 
-    with open("{}.json".format(OUTPUT_IMG_PATH), "w") as f:
-        json.dump(config, f, ensure_ascii = False)
-
-    print("Complete")
-
 
 
 ### Utilities
