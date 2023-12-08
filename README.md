@@ -73,3 +73,10 @@ LangChain
 - [blip2](https://aws.amazon.com/jp/blogs/machine-learning/build-a-generative-ai-based-content-moderation-solution-on-amazon-sagemaker-jumpstart/)
 
 - https://github.com/AUTOMATIC1111/stable-diffusion-webui
+
+- https://stability.ai/news/stability-ai-makes-its-stable-diffusion-models-available-on-amazons-new-bedrock-service
+
+
+### Links - Titan Image Generation
+
+- https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html

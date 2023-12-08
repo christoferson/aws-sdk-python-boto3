@@ -161,6 +161,7 @@ cython_debug/
 
 embedding/vectordb/qdrant/*
 
-titan-image/out/*
+titan-image/*
+stable-diffusion/*
 stable-diffusion/out/*
 sagemaker/stable-diffusion/out/*
