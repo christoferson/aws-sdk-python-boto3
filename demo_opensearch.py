@@ -2,6 +2,7 @@ import boto3
 import config
 from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
 import csv
+import json
 
 def run_demo(session):
 
@@ -20,9 +21,26 @@ def run_demo(session):
     )
 
     index_name = "movies";
+    query = {
+        "query": {
+            "match":{"Film":"Twilight"}
+        }
+    }
+    query2 = {
+        "query": {
+            "match":{"Lead Studio":"Warner"}
+        },
+        "sort": {
+            "Year": {
+                "order": "desc"
+            }
+        }
+    }
+    
 
     #demo_opensearch_basic(search, index_name)
-    demo_opensearch_populate(search, index_name)
+    #demo_opensearch_populate(search, index_name)
+    demo_opensearch_search(search, index_name, query2)
 
 def demo_opensearch_basic(search, index_name):
 
@@ -44,13 +62,30 @@ def demo_opensearch_basic(search, index_name):
 
     print("end")
 
+
+index_settings = {
+  "mappings": {
+    "properties": {
+      "Film":{
+        "type": "text",
+        "analyzer": "kuromoji"
+      },
+      "Year":{
+        "type": "integer"
+      }
+    }
+  }
+}
+
 def demo_opensearch_populate(search, index_name):
 
     print(f"Run demo_opensearch_populate index_name={index_name}")
 
+    search.indices.delete(index=index_name)
+
     if not search.indices.exists(index=index_name):
-        #search.indices.create(index=index_name,body=settings)
-        search.indices.create(index=index_name)
+        search.indices.create(index=index_name,body=index_settings)
+        #search.indices.create(index=index_name)
 
     id = 1
     with open("data/movies.csv","r",encoding="utf-8") as f:
@@ -62,5 +97,22 @@ def demo_opensearch_populate(search, index_name):
                 id = id
             )
             id += 1
+
+    print("end")
+
+
+def demo_opensearch_search(search, index_name, query):
+
+    print(f"Run demo_opensearch_search index_name={index_name}")
+
+    if not search.indices.exists(index=index_name):
+        print(f"Index {index_name} does not exist.")
+        return
+
+    result = search.search(index=index_name, body=json.dumps(query))
+    #print(result)
+    print(f"Hit Count: {result['hits']['total']['value']}")
+    for idx, hit in enumerate(result['hits']['hits']):
+        print(f"{idx+1} {hit['_source']}")
 
     print("end")
