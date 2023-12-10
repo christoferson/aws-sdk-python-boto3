@@ -8,7 +8,9 @@ import io
 import datetime
 import random
 from PIL import Image
+
 import config_stable_diffusion
+import config_stable_diffusion_xl10
 
 
 def run_demo(session):
@@ -21,18 +23,21 @@ def run_demo(session):
     model_id = "stability.stable-diffusion-xl-v0"
 
     iconfig = config_stable_diffusion.shoe_1A
-    #demo_sd_generate_image(bedrock_runtime, model_id, iconfig["text"], iconfig["negative"], iconfig["style"], iconfig["scale"])
+    #demo_sd_generate_image_xl_v0(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
     #demo_sd_generate_image_multi_prompt(bedrock_runtime, model_id, iconfig["text"], iconfig["negative"], iconfig["style"], iconfig["scale"])
 
+    # Stable Diffusion XL 1.0 - Bedrock
+
     model_id = "stability.stable-diffusion-xl-v1"
-    demo_sd_generate_image_xl_v1(bedrock_runtime, model_id, iconfig["text"], iconfig["negative"], iconfig["style"], iconfig["scale"])
+    iconfig = config_stable_diffusion_xl10.shoe_2E #shoe_2D
+    demo_sd_generate_image_xl_v1(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
 
 
 ####################
 
-def demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
+def demo_sd_generate_image_xl_v0(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
 
-    print(f"Call demo_sd_generate_image | style_preset={style_preset} | cfg_scale={cfg_scale}")
+    print(f"Call demo_sd_generate_image_xl_v0 | style_preset={style_preset} | cfg_scale={cfg_scale}")
 
     print(f"PROMPT: {prompt}")
     print(f"NEG_PROMPT: {negative_prompts}")
@@ -41,7 +46,7 @@ def demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, 
 
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     file_extension = ".png"
-    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
+    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/v0/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
 
     seed = random.randint(0, 4294967295)
@@ -106,7 +111,7 @@ def demo_sd_generate_image(bedrock_runtime, model_id, prompt, negative_prompts, 
 
 def demo_sd_generate_image_xl_v1(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
 
-    print(f"Call demo_sd_generate_image | style_preset={style_preset} | cfg_scale={cfg_scale}")
+    print(f"Call demo_sd_generate_image_xl_v1 | style_preset={style_preset} | cfg_scale={cfg_scale}")
 
     print(f"PROMPT: {prompt}")
     print(f"NEG_PROMPT: {negative_prompts}")
@@ -115,11 +120,11 @@ def demo_sd_generate_image_xl_v1(bedrock_runtime, model_id, prompt, negative_pro
 
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     file_extension = ".png"
-    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
+    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/v1/out/{}{}".format(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"), file_extension))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
 
     seed = random.randint(0, 4294967295)
-    steps = 30 #50
+    steps = 50 #150 #30 #50
     #cfg_scale = cfg_scale
     start_schedule = 0.6
     change_prompt = prompt
