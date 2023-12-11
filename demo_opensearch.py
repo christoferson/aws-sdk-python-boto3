@@ -37,10 +37,37 @@ def run_demo(session):
         }
     }
     
+    query3 = {
+        "query": {
+            "match":{"Lead Studio":"Warner"},
+            "range":{"Audience score %": { "gte" : 55, "lte" : 70}}
+        },
+        "sort": {
+            "Audience score %": {
+                "order": "desc"
+            }
+        }
+    }
+
+    query4 = {
+        "query": {
+            "bool" : {
+                "must" : [
+                    { "match":{"Lead Studio":"Warner"}, },
+                    { "range":{"Audience score %": { "gte" : 55, "lte" : 70}} }
+                ]
+            }
+        },
+        "sort": {
+            "Audience score %": {
+                "order": "desc"
+            }
+        }
+    }
 
     #demo_opensearch_basic(search, index_name)
     #demo_opensearch_populate(search, index_name)
-    demo_opensearch_search(search, index_name, query2)
+    demo_opensearch_search(search, index_name, query4)
 
 def demo_opensearch_basic(search, index_name):
 
@@ -70,9 +97,29 @@ index_settings = {
         "type": "text",
         "analyzer": "kuromoji"
       },
+      "Genre":{
+        "type": "text",
+        "analyzer": "kuromoji"
+      },
+      "Lead Studio":{
+        "type": "text",
+        "analyzer": "kuromoji"
+      },
       "Year":{
         "type": "integer"
-      }
+      },
+      "Audience score %":{
+        "type": "float"
+      },
+      "Rotten Tomatoes %":{
+        "type": "float"
+      },
+      "Profitability":{
+        "type": "double"
+      },
+      "Worldwide Gross":{
+        "type": "text"
+      },
     }
   }
 }
