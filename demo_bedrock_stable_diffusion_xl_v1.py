@@ -26,24 +26,25 @@ def run_demo(session):
     # Stable Diffusion XL 1.0 - Bedrock
 
     model_id = "stability.stable-diffusion-xl-v1"
-    iconfig = config_stable_diffusion_xl10.shoe_2E #shoe_2D
-    #demo_sd_generate_image_xl_v1(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
+    iconfig = config_stable_diffusion_xl10.shoe_2D #shoe_2D
+    demo_sd_generate_text_to_image_xl_v1(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
 
     iconfig = config_stable_diffusion_xl10.prompt_me_0_male #shoe_2D
     reference_image = "input.png"
     reference_image = "me.jpg"
     #reference_image = "DSC_2175.jpg"
     #reference_image = "IMG_1123.jpeg"
-    demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_image, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
+    #demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_image, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
 
 
     #demo_sd_generate_image_to_image_inpaint_xl_v1(bedrock_runtime, model_id, reference_image, "Add Sun", iconfig["negative"], iconfig["style"], iconfig["scale"])
 
 ####################
 
-def demo_sd_generate_image_xl_v1(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
+# https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-diffusion-1-0-text-image.html
+def demo_sd_generate_text_to_image_xl_v1(bedrock_runtime, model_id, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
 
-    print(f"Call demo_sd_generate_image_xl_v1 | style_preset={style_preset} | cfg_scale={cfg_scale}")
+    print(f"Call demo_sd_generate_text_to_image_xl_v1 | style_preset={style_preset} | cfg_scale={cfg_scale}")
 
     print(f"PROMPT: {prompt}")
     print(f"NEG_PROMPT: {negative_prompts}")
@@ -81,18 +82,21 @@ def demo_sd_generate_image_xl_v1(bedrock_runtime, model_id, prompt, negative_pro
     body = json.dumps(
         {
             "text_prompts": (
-                [{"text": config["change_prompt"]}]
+                #[{"text": config["change_prompt"]}]
                 #[{"text": config["change_prompt"], "weight": 1.0}]
                 #+ [{"text": negprompt, "weight": -1.0} for negprompt in negative_prompts]
+                [{"text": config["change_prompt"], "weight": 1.0}]
+                + [{"text": negprompt, "weight": -1.0} for negprompt in negative_prompts]
             ),
-            "cfg_scale": config["cfg_scale"],
+            "cfg_scale": config["cfg_scale"], # Determines how much the final image portrays the prompt. Use a lower number to increase randomness in the generation. 0-35,7
             #"clip_guidance_preset"
             #"height": "1024",
             #"width": "1024",
-            "seed": config["seed"],
+            "seed": config["seed"], # The seed determines the initial noise setting.0-4294967295,0
             #"start_schedule": config["start_schedule"],
-            "steps": config["steps"],
-            #"style_preset": config["style_preset"]
+            "steps": config["steps"], # Generation step determines how many times the image is sampled. 10-50,50
+            "style_preset": config["style_preset"],
+            "samples": 1,
         }
     )
 
