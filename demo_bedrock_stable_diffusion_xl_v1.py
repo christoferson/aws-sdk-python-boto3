@@ -27,14 +27,14 @@ def run_demo(session):
 
     model_id = "stability.stable-diffusion-xl-v1"
     iconfig = config_stable_diffusion_xl10.shoe_2D #shoe_2D
-    demo_sd_generate_text_to_image_xl_v1(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
+    #demo_sd_generate_text_to_image_xl_v1(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
 
     iconfig = config_stable_diffusion_xl10.prompt_me_0_male #shoe_2D
     reference_image = "input.png"
     reference_image = "me.jpg"
     #reference_image = "DSC_2175.jpg"
     #reference_image = "IMG_1123.jpeg"
-    #demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_image, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
+    demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_image, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
 
 
     #demo_sd_generate_image_to_image_inpaint_xl_v1(bedrock_runtime, model_id, reference_image, "Add Sun", iconfig["negative"], iconfig["style"], iconfig["scale"])
@@ -166,7 +166,9 @@ def demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_i
         "style_preset": style_preset,
         "size": size,
         "negative_prompts": negative_prompts,
-        "input_image": INPUT_IMG_PATH
+        "input_image": INPUT_IMG_PATH,
+        "init_image_mode": "IMAGE_STRENGTH",
+        "image_strength": 0.65, #0.95,
     }
 
     # 
@@ -180,6 +182,8 @@ def demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_i
                 [{"text": config["change_prompt"], "weight": 1.0}]
                 + [{"text": negprompt, "weight": -1.0} for negprompt in negative_prompts]
             ),
+            "init_image_mode": config["init_image_mode"],
+            "image_strength": config["image_strength"],
             "cfg_scale": config["cfg_scale"],
             #"clip_guidance_preset"
             #"height": "1024",
@@ -187,7 +191,7 @@ def demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_i
             "seed": config["seed"],
             #"start_schedule": config["start_schedule"],
             "steps": config["steps"],
-            #"style_preset": config["style_preset"]
+            "style_preset": config["style_preset"],
             "init_image": input_image_b64,
         }
     )
