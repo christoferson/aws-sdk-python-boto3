@@ -3,6 +3,7 @@ import json
 import config
 import numpy as np
 import cmn_utils
+import uuid
 
 def run_demo(session):
 
@@ -10,85 +11,32 @@ def run_demo(session):
 
     bedrock_runtime = session.client('bedrock-runtime', region_name="us-east-1")
 
-    #demo_list_foundation_models(bedrock)
+    bedrock_agent_runtime = session.client('bedrock-agent-runtime', region_name="us-east-1")
 
-    #demo_invoke_model(bedrock_runtime, "ai21.j2-mid-v1", "What is the diameter of Earth?")
-
-    demo_invoke_model_anthropic_claude(bedrock_runtime)
-
-    model_id = "amazon.titan-embed-text-v1"
-
-    #demo_embedding_calculate_with_cosine_similarity(bedrock_runtime, model_id)
+    demo_invoke_bedrock_agent_runtime(bedrock_agent_runtime)
 
 
-def demo_list_foundation_models(bedrock):
+def demo_invoke_bedrock_agent_runtime(bedrock_agent_runtime, prompt="What is the first US ammendment?"):
 
-    #>>> import pprint
-    #>>> pprint.pprint(bedrock.list_foundation_models()["modelSummaries"])
+    print("Call demo_invoke_bedrock_agent_runtime")
 
-    response = bedrock.list_foundation_models()
+    agent_id = config.bedrock_agent["agent_id"]
+    agent_alias_id = config.bedrock_agent["agent_alias_id"]
 
-    print(response)
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agent-runtime/client/invoke_agent.html
+    response = bedrock_agent_runtime.invoke_agent(
+        agentId=agent_id, 
+        agentAliasId=agent_alias_id, 
+        sessionId=str(uuid.uuid4()), 
+        inputText=prompt, 
+        enableTrace=True, endSession=False)
+    
+    print(f"Answer: {response}")
 
-def demo_invoke_model(bedrock_runtime, model_id, prompt):
+    text = ""
+    event_stream = response['completion']
+    for event in event_stream:        
+        if 'chunk' in event:
+            text += event['chunk']['bytes'].decode("utf-8")
+            print(text)
 
-    request = {
-        "prompt": prompt,
-        "temperature": 0.0
-    }
-
-    response = bedrock_runtime.invoke_model(modelId = model_id, body = json.dumps(request))
-
-    response_body_json = json.loads(response["body"].read())
-
-    print(response_body_json["completions"][0]["data"]["text"])
-
-def demo_invoke_model_anthropic_claude(bedrock_runtime, model_id = "anthropic.claude-v1"):
-
-    print("Call demo_invoke_model_anthropic_claude")
-
-    prompt="""\n\nHuman: What is the diameter of the earth?
-        Assistant:
-    """
-
-    request = {
-        "prompt": prompt,
-        "temperature": 0.0,
-        "top_p": 0.5,
-        "top_k": 300,
-        "max_tokens_to_sample": 2048,
-        "stop_sequences": []
-        }
-
-    response = bedrock_runtime.invoke_model(modelId = model_id, body = json.dumps(request))
-
-    response_body_json = json.loads(response["body"].read())
-
-    print(f"Answer: {response_body_json['completion']}")
-
-def demo_embedding_calculate(bedrock_runtime, model_id, prompt):
-
-    request = {
-        "inputText": prompt
-    }
-
-    response = bedrock_runtime.invoke_model(modelId = model_id, body = json.dumps(request).encode('UTF-8'))
-
-    response_body_json = json.loads(response["body"].read())
-
-    embedding = response_body_json["embedding"]
-
-    print(response_body_json.get("inputTextTokenCount"))
-    #print(embedding)
-
-    return embedding
-
-def demo_embedding_calculate_with_cosine_similarity(bedrock_runtime, model_id):
-
-    val1 = demo_embedding_calculate(bedrock_runtime, model_id, "埋め込みの実験のためのサンプルテキストです")
-    val2 = demo_embedding_calculate(bedrock_runtime, model_id, "ぺぺろんちに食べたい")
-    val3 = demo_embedding_calculate(bedrock_runtime, model_id, "This is an example text for testing embeddings.")
-
-    print(cmn_utils.cosine_similarity(val1, val2))
-    print(cmn_utils.cosine_similarity(val2, val3))
-    print(cmn_utils.cosine_similarity(val1, val3))
