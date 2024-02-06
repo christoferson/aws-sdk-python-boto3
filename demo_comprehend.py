@@ -1,5 +1,6 @@
 import boto3
 import config
+import json
 
 def run_demo(session):
 
@@ -20,4 +21,12 @@ def run_demo_detect_entities(comprehend, text):
         Text=text, LanguageCode="en"
     )
 
-    print(f'Detected labels for {response}')
+    print(json.dumps(response, sort_keys=True, indent=4))
+
+    for label in response['Entities']:
+        text_name = label['Text']
+        text_confidence = str(round(float(label['Score']), 2))
+        text_type = label['Type']
+        text_offset_start = label['BeginOffset']
+        text_offset_end = label['EndOffset']
+        print (f'{text_name} {text_confidence} {text_type}')
