@@ -10,16 +10,12 @@ import random
 import config_stable_diffusion
 import demo_sagemaker_stable_diffusion_lib
 
-# SageMaker Studio
-# SageMaker JumpStart
-# SageMaker XL 1.0 (OpenSource)
-# Deploy , Do not select Run In Notebook
-# Endpoint wil be ready in 20-30 minutes
+
 
 def run_demo(session):
 
     sagemaker_region_name = config.sagemaker["region_name"]
-    sagemaker_endpoint_name = config.sagemaker["endpoint_name"]
+    sagemaker_endpoint_name = config.sagemaker["endpoint_finetune_name"]
 
     sagemaker_runtime = session.client('runtime.sagemaker')
     sagemaker = session.client('sagemaker', region_name=sagemaker_region_name)
@@ -36,24 +32,28 @@ def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     OUTPUT_IMG_FILENAME = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "sagemaker/stable-diffusion/out/{}{}".format(OUTPUT_IMG_FILENAME, ".png"))
+    OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "sagemaker/stable-diffusion-ft/out/{}{}".format(OUTPUT_IMG_FILENAME, ".png"))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
 
     response = sagemaker_runtime.invoke_endpoint(EndpointName=endpoint_name, ContentType='application/json', 
-                                      Body=json.dumps(payload).encode('utf-8'), Accept='application/json')
+                                      Body=json.dumps(payload).encode('utf-8'), Accept='application/json;jpeg')
     
-    response_dict = json.loads(response['Body'].read())
+    generated_images, prompt = parse_response_multiple_images(response)
+    #for img in generated_images:
+    #    display_image(img, prompt)
 
-    generated_image_base64 = response_dict['generated_image']
+    #response_dict = json.loads(response['Body'].read())
+    #print(response_dict)
 
-    response_image = demo_sagemaker_stable_diffusion_lib.base64_to_image(generated_image_base64)
+    decoded_images = [decode_base64_image(image) for image in generated_images]
 
-    response_image.save(OUTPUT_IMG_PATH)
+    for idx, decoded_image in enumerate(decoded_images):
+        decoded_image.save(OUTPUT_IMG_PATH)
 
     with open("{}.json".format(OUTPUT_IMG_PATH), "w") as f:
         json.dump(payload, f, ensure_ascii = False)
 
-    return generated_image_base64
+    return None
 
 def demo_sagemaker_sd_generate_text_2_image(session, endpoint_name):
 
@@ -65,18 +65,13 @@ def demo_sagemaker_sd_generate_text_2_image(session, endpoint_name):
     negative_prompts = iconfig["negative"]
 
     payload = {
-        "text_prompts":[{"text": text, "weight": 1}],
-        "width": 1152,
-        "height": 896,
-        "sampler": "DPMPP2MSampler",
-        "cfg_scale": 7.0,
-        "steps": 50,
+        "prompt": text,
+        "width": 400, #1152,
+        "height": 400, #896,
         "seed": random.randint(0, 4294967295), #133,
-        "use_refiner": True,
-        "refiner_steps": 40,
-        "refiner_strength": 0.2,
-        #"style_preset": "origami",
-        "negative": negative_prompts
+        "num_inference_steps": 50,
+        "guidance_scale": 7.5,
+        #"negative": negative_prompts
     }
 
     cmn_sagemaker_sd_generate_image(session, endpoint_name, payload)
@@ -85,6 +80,11 @@ def demo_sagemaker_sd_generate_text_2_image(session, endpoint_name):
 
 
 ### Utilities
+    
+def decode_base64_image(image_string):
+  base64_image = base64.b64decode(image_string)
+  buffer = io.BytesIO(base64_image)
+  return Image.open(buffer)
 
 def image_to_base64(image):
     buffer = io.BytesIO()
@@ -93,3 +93,23 @@ def image_to_base64(image):
 
 def base64_to_image(base64_str):
     return Image.open(io.BytesIO(base64.decodebytes(bytes(base64_str, "utf-8"))))
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+def parse_response(query_response):
+    response_dict = json.loads(query_response['Body'].read())
+    return response_dict['generated_image'], response_dict['prompt']
+
+def display_image(img, prmpt):
+    plt.figure(figsize=(12,12))
+    plt.imshow(np.array(img))
+    plt.axis('off')
+    plt.title(prmpt)
+    plt.show()
+
+
+
+def parse_response_multiple_images(query_response):
+    response_dict = json.loads(query_response['Body'].read())
+    return response_dict['generated_images'], response_dict['prompt']   
