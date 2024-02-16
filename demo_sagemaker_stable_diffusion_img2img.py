@@ -8,6 +8,9 @@ import config
 import random
 
 import config_stable_diffusion
+import demo_sagemaker_stable_diffusion_lib
+
+# Code to invoke Stable Diffusion XL 1.0 OpenSource Sagemaker Endpoint
 
 # SageMaker Studio
 # SageMaker JumpStart
@@ -23,51 +26,34 @@ def run_demo(session):
     sagemaker_runtime = session.client('runtime.sagemaker')
     sagemaker = session.client('sagemaker', region_name=sagemaker_region_name)
 
-    #cmn_cleanup_delete_endpoints(sagemaker)
-
     reference_image = "input.png"
 
     print(f"sagemaker_endpoint_name={sagemaker_endpoint_name}")
-    #iconfig = config_stable_diffusion.shoe_1A
     demo_sagemaker_sd_generate_image_2_image(sagemaker_runtime, sagemaker_endpoint_name, reference_image)
 
 
 ####################
 
-def cmn_list_models(sagemaker):
-    print(f"cmn_list_models")
-    #result = sagemaker.list_endpoints(StatusEquals='InService') # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
-    result = sagemaker.list_models(MaxResults = 3, NameContains="stable-d") # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
-    print(result)
-    for Model in result['Models']:
-        print(Model)
-    
-def cmn_create_deploy_endpoints(sagemaker):
-    print(f"cmn_create_deploy_endpoints")
-    print("TODO")
+def cmn_sagemaker_sd_generate_image_2_image(sagemaker_runtime, endpoint_name, payload, reference_image_filename):
 
-
-def cmn_cleanup_delete_endpoints(sagemaker):
-    print(f"cmn_cleanup_delete_endpoints")
-    #result = sagemaker.list_endpoints(StatusEquals='InService') # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
-    result = sagemaker.list_endpoints() # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
-    print(result)
-    for Endpoint in result['Endpoints']:
-        endpoint_name = Endpoint['EndpointName']
-        print(f"Deleting Endpoint: {endpoint_name}")
-        result = sagemaker.delete_endpoint(EndpointName=endpoint_name)
-        print(result)
-        print()
-    print("Cleanup End")
-
-def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
-
-    print(f"Call query_endpoint_with_json_payload payload={payload}")
+    print(f"Call cmn_sagemaker_sd_generate_image_2_image payload={payload}")
 
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     OUTPUT_IMG_FILENAME = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     OUTPUT_IMG_PATH = os.path.join(ROOT_DIR, "sagemaker/stable-diffusion/out/{}{}".format(OUTPUT_IMG_FILENAME, ".png"))
     print("OUTPUT_IMG_PATH: " + OUTPUT_IMG_PATH)
+
+    #
+    file_extension = ".png"
+    file_name, file_extension = os.path.splitext(reference_image_filename)
+    INPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/v1/in/{}".format(reference_image_filename))
+    print("INPUT_IMG_PATH: " + INPUT_IMG_PATH)
+
+    print(f"Loading Reference Image ... {INPUT_IMG_PATH}")
+    size = 1024
+    input_image_b64 = image_to_base64(Image.open(INPUT_IMG_PATH).resize((size, size)))
+
+    payload["init_image"] = input_image_b64 #"init_image": input_image_b64
 
     response = sagemaker_runtime.invoke_endpoint(EndpointName=endpoint_name, ContentType='application/json', 
                                       Body=json.dumps(payload).encode('utf-8'), Accept='application/json')
@@ -87,27 +73,14 @@ def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
 
 
-def demo_sagemaker_sd_generate_image_2_image(session, endpoint_name, reference_imgage_filename):
+def demo_sagemaker_sd_generate_image_2_image(session, endpoint_name, reference_image_filename):
 
-    print(f"Call demo_sagemaker_sd_generate_image_2_image")
+    print(f"Call demo_sagemaker_sd_generate_image_2_image. reference_imgage_filename={reference_image_filename}")
 
-    iconfig = config_stable_diffusion.shoe_1A
-    #text = "jaguar in the Amazon rainforest"
+    iconfig = config_stable_diffusion.sagemaker_stable_diffusion_1_os
     text = iconfig["text"]
     negative_prompts = iconfig["negative"]
 
-    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-    file_extension = ".png"
-
-    file_name, file_extension = os.path.splitext(reference_imgage_filename)
-    INPUT_IMG_PATH = os.path.join(ROOT_DIR, "stable-diffusion/v1/in/{}".format(reference_imgage_filename))
-    print("INPUT_IMG_PATH: " + INPUT_IMG_PATH)
-
-    print(f"Loading Reference Image ... {INPUT_IMG_PATH}")
-    size = 1024
-    input_image_b64 = image_to_base64(Image.open(INPUT_IMG_PATH).resize((size, size)))
-
-    # 1024x1024
     payload = {
         "text_prompts":[{"text": text, "weight": 1}],
         "width": 1152,
@@ -120,17 +93,12 @@ def demo_sagemaker_sd_generate_image_2_image(session, endpoint_name, reference_i
         "refiner_steps": 40,
         "refiner_strength": 0.2,
         #"style_preset": "origami",
-        "negative": negative_prompts,
-        "init_image": input_image_b64
+        "negative": negative_prompts
     }
 
-    cmn_sagemaker_sd_generate_image(session, endpoint_name, payload)
+    cmn_sagemaker_sd_generate_image_2_image(session, endpoint_name, payload, reference_image_filename)
 
     print("END")
-
-
-
-
 
 ### Utilities
 
