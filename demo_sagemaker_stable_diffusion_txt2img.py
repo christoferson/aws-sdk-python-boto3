@@ -8,6 +8,7 @@ import config
 import random
 
 import config_stable_diffusion
+import demo_sagemaker_stable_diffusion_lib
 
 # SageMaker Studio
 # SageMaker JumpStart
@@ -23,40 +24,11 @@ def run_demo(session):
     sagemaker_runtime = session.client('runtime.sagemaker')
     sagemaker = session.client('sagemaker', region_name=sagemaker_region_name)
 
-    #cmn_cleanup_delete_endpoints(sagemaker)
-
     print(f"sagemaker_endpoint_name={sagemaker_endpoint_name}")
-    #iconfig = config_stable_diffusion.shoe_1A
     demo_sagemaker_sd_generate_image(sagemaker_runtime, sagemaker_endpoint_name)
 
 
 ####################
-
-def cmn_list_models(sagemaker):
-    print(f"cmn_list_models")
-    #result = sagemaker.list_endpoints(StatusEquals='InService') # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
-    result = sagemaker.list_models(MaxResults = 3, NameContains="stable-d") # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
-    print(result)
-    for Model in result['Models']:
-        print(Model)
-    
-def cmn_create_deploy_endpoints(sagemaker):
-    print(f"cmn_create_deploy_endpoints")
-    print("TODO")
-
-
-def cmn_cleanup_delete_endpoints(sagemaker):
-    print(f"cmn_cleanup_delete_endpoints")
-    #result = sagemaker.list_endpoints(StatusEquals='InService') # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
-    result = sagemaker.list_endpoints() # StatusEquals='OutOfService'|'Creating'|'Updating'|'SystemUpdating'|'RollingBack'|'InService'|'Deleting'|'Failed'
-    print(result)
-    for Endpoint in result['Endpoints']:
-        endpoint_name = Endpoint['EndpointName']
-        print(f"Deleting Endpoint: {endpoint_name}")
-        result = sagemaker.delete_endpoint(EndpointName=endpoint_name)
-        print(result)
-        print()
-    print("Cleanup End")
 
 def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
@@ -74,7 +46,7 @@ def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
     generated_image_base64 = response_dict['generated_image']
 
-    response_image = base64_to_image(generated_image_base64)
+    response_image = demo_sagemaker_stable_diffusion_lib.base64_to_image(generated_image_base64)
 
     response_image.save(OUTPUT_IMG_PATH)
 
@@ -82,8 +54,6 @@ def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
         json.dump(payload, f, ensure_ascii = False)
 
     return generated_image_base64
-
-
 
 def demo_sagemaker_sd_generate_image(session, endpoint_name):
 
@@ -113,9 +83,6 @@ def demo_sagemaker_sd_generate_image(session, endpoint_name):
     cmn_sagemaker_sd_generate_image(session, endpoint_name, payload)
 
     print("END")
-
-
-
 
 
 ### Utilities
