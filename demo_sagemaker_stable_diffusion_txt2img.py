@@ -25,14 +25,14 @@ def run_demo(session):
     sagemaker = session.client('sagemaker', region_name=sagemaker_region_name)
 
     print(f"sagemaker_endpoint_name={sagemaker_endpoint_name}")
-    demo_sagemaker_sd_generate_image(sagemaker_runtime, sagemaker_endpoint_name)
+    demo_sagemaker_sd_generate_text_2_image(sagemaker_runtime, sagemaker_endpoint_name)
 
 
 ####################
 
 def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
-    print(f"Call query_endpoint_with_json_payload payload={payload}")
+    print(f"Call cmn_sagemaker_sd_generate_image payload={payload}")
 
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     OUTPUT_IMG_FILENAME = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -55,16 +55,15 @@ def cmn_sagemaker_sd_generate_image(sagemaker_runtime, endpoint_name, payload):
 
     return generated_image_base64
 
-def demo_sagemaker_sd_generate_image(session, endpoint_name):
+def demo_sagemaker_sd_generate_text_2_image(session, endpoint_name):
 
-    print(f"Call demo_sagemaker_sd_generate_image")
+    print(f"Call demo_sagemaker_sd_generate_text_2_image")
 
     iconfig = config_stable_diffusion.shoe_1A
-    #text = "jaguar in the Amazon rainforest"
+    #iconfig = config_stable_diffusion.sagemaker_stable_diffusion_v21_riobugger
     text = iconfig["text"]
     negative_prompts = iconfig["negative"]
 
-    # 1024x1024
     payload = {
         "text_prompts":[{"text": text, "weight": 1}],
         "width": 1152,
