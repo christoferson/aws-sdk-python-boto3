@@ -1,3 +1,6 @@
+import io
+import base64
+from PIL import Image
 
 def cmn_create_deploy_endpoints(sagemaker):
     print(f"cmn_create_deploy_endpoints")
@@ -24,4 +27,13 @@ def cmn_list_models(sagemaker):
     print(result)
     for Model in result['Models']:
         print(Model)
-    
+
+### Image Utilities
+
+def image_to_base64(image):
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+def base64_to_image(base64_str):
+    return Image.open(io.BytesIO(base64.decodebytes(bytes(base64_str, "utf-8"))))

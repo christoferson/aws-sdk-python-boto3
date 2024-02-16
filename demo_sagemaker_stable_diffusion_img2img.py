@@ -1,6 +1,4 @@
 from PIL import Image
-import io
-import base64
 import json
 import os
 import datetime
@@ -26,7 +24,7 @@ def run_demo(session):
     sagemaker_runtime = session.client('runtime.sagemaker')
     sagemaker = session.client('sagemaker', region_name=sagemaker_region_name)
 
-    reference_image = "input.png"
+    reference_image = "jaguar.png"
 
     print(f"sagemaker_endpoint_name={sagemaker_endpoint_name}")
     demo_sagemaker_sd_generate_image_2_image(sagemaker_runtime, sagemaker_endpoint_name, reference_image)
@@ -51,7 +49,7 @@ def cmn_sagemaker_sd_generate_image_2_image(sagemaker_runtime, endpoint_name, pa
 
     print(f"Loading Reference Image ... {INPUT_IMG_PATH}")
     size = 1024
-    input_image_b64 = image_to_base64(Image.open(INPUT_IMG_PATH).resize((size, size)))
+    input_image_b64 = demo_sagemaker_stable_diffusion_lib.image_to_base64(Image.open(INPUT_IMG_PATH).resize((size, size)))
 
     payload["init_image"] = input_image_b64 #"init_image": input_image_b64
 
@@ -62,7 +60,7 @@ def cmn_sagemaker_sd_generate_image_2_image(sagemaker_runtime, endpoint_name, pa
 
     generated_image_base64 = response_dict['generated_image']
 
-    response_image = base64_to_image(generated_image_base64)
+    response_image = demo_sagemaker_stable_diffusion_lib.base64_to_image(generated_image_base64)
 
     response_image.save(OUTPUT_IMG_PATH)
 
@@ -100,12 +98,3 @@ def demo_sagemaker_sd_generate_image_2_image(session, endpoint_name, reference_i
 
     print("END")
 
-### Utilities
-
-def image_to_base64(image):
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    return base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-def base64_to_image(base64_str):
-    return Image.open(io.BytesIO(base64.decodebytes(bytes(base64_str, "utf-8"))))
