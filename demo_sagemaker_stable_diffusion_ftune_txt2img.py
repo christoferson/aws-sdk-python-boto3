@@ -59,21 +59,22 @@ def demo_sagemaker_sd_generate_text_2_image(session, endpoint_name):
 
     print(f"Call demo_sagemaker_sd_generate_text_2_image")
 
-    iconfig = config_stable_diffusion.shoe_1A
-    #iconfig = config_stable_diffusion.sagemaker_stable_diffusion_v21_riobugger
+    #iconfig = config_stable_diffusion.shoe_1A
+    iconfig = config_stable_diffusion.sagemaker_stable_diffusion_v21_riobugger
     text = iconfig["text"]
     negative_prompts = iconfig["negative"]
 
     payload = {
         "prompt": text,
-        "width": 400, #1152,
-        "height": 400, #896,
+        "width": 800, #736, #1152, \u0027OutOfMemoryError\u0027
+        "height": 576, #896,
         "seed": random.randint(0, 4294967295), #133,
         "num_inference_steps": 50,
         "guidance_scale": 7.5,
-        #"negative": negative_prompts
+        "negative_prompt": iconfig["negative_text"],
     }
 
+    
     cmn_sagemaker_sd_generate_image(session, endpoint_name, payload)
 
     print("END")
