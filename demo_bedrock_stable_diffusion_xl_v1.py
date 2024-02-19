@@ -26,15 +26,20 @@ def run_demo(session):
     # Stable Diffusion XL 1.0 - Bedrock
 
     model_id = "stability.stable-diffusion-xl-v1"
-    iconfig = config_stable_diffusion_xl10.shoe_2D #shoe_2D
+    iconfig = config_stable_diffusion_xl10.shoe_2D_v3 #shoe_2D #shoe_2D
     #demo_sd_generate_text_to_image_xl_v1(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
 
-    iconfig = config_stable_diffusion_xl10.prompt_me_0_male #shoe_2D
-    reference_image = "input.png"
-    reference_image = "me.jpg"
+    #iconfig = config_stable_diffusion_xl10.prompt_me_0_male #shoe_2D
+    #reference_image = "input.png"
+    #reference_image = "me.jpg"
     #reference_image = "DSC_2175.jpg"
     #reference_image = "IMG_1123.jpeg"
-    demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_image, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"])
+    #demo_sd_generate_text_to_image_xl_v1(bedrock_runtime, model_id, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"]);
+
+    #shoe_2D_IMG_IMG, shoe_2D_IMG_IMG_PURPLE, shoe_2D_IMG_IMG_ORANGE
+    iconfig = config_stable_diffusion_xl10.shoe_2D_IMG_IMG_ORANGE
+    reference_image = "1011B703_401_SB_FR_GLB.png"
+    demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_image, iconfig["text"].strip(), iconfig["negative"], iconfig["style"], iconfig["scale"], iconfig["image_strength"])
 
 
     #demo_sd_generate_image_to_image_inpaint_xl_v1(bedrock_runtime, model_id, reference_image, "Add Sun", iconfig["negative"], iconfig["style"], iconfig["scale"])
@@ -124,9 +129,9 @@ def demo_sd_generate_text_to_image_xl_v1(bedrock_runtime, model_id, prompt, nega
 
 ####################
 
-def demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_imgage_filename, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10):
+def demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_imgage_filename, prompt, negative_prompts, style_preset="comic-book", cfg_scale = 10, image_strength= 0.65):
 
-    print(f"Call demo_sd_generate_image_to_image_xl_v1 | style_preset={style_preset} | cfg_scale={cfg_scale} | reference_imgage_filename={reference_imgage_filename}")
+    print(f"Call demo_sd_generate_image_to_image_xl_v1 | style_preset={style_preset} | cfg_scale={cfg_scale} | reference_imgage_filename={reference_imgage_filename} | image_strength={image_strength}")
 
     print(f"PROMPT: {prompt}")
     print(f"NEG_PROMPT: {negative_prompts}")
@@ -168,7 +173,7 @@ def demo_sd_generate_image_to_image_xl_v1(bedrock_runtime, model_id, reference_i
         "negative_prompts": negative_prompts,
         "input_image": INPUT_IMG_PATH,
         "init_image_mode": "IMAGE_STRENGTH",
-        "image_strength": 0.65, #0.95,
+        "image_strength": image_strength, #0.95,
     }
 
     # 
