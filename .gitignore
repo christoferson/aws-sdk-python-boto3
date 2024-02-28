@@ -167,3 +167,10 @@ stable-diffusion/out/*
 sagemaker/stable-diffusion/out/*
 config*.py
 config_stable_diffusion.py
+notes.txt
+main.private
+temp*.*
+
+.chainlit
+embedding
+sagemaker
