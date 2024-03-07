@@ -31,6 +31,7 @@ def run_demo(session):
     model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
     #model_id = "anthropic.claude-v2"
     demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id)
+    #demo_stream_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id, "Give me a trivia about pluto")
 
 
 def demo_list_foundation_models(bedrock):
@@ -154,9 +155,8 @@ def generate_message(bedrock_runtime, model_id, system_prompt, messages, max_tok
 
 
 def demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id):
-    """
-    Entrypoint for Anthropic Claude message example.
-    """
+    
+    print("demo_invoke_model_anthropic_claude_v3")
 
     try:
 
@@ -167,9 +167,9 @@ def demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id):
         user_message =  {"role": "user", "content": "Give me a trivia about pluto"}
         messages = [user_message]
 
-        response = generate_message(bedrock_runtime, model_id, system_prompt, messages, max_tokens)
-        print("User turn only.")
-        print(json.dumps(response, indent=4))
+        #response = generate_message(bedrock_runtime, model_id, system_prompt, messages, max_tokens)
+        #print("User turn only.")
+        #print(json.dumps(response, indent=4))
 
         # Prompt with both user turn and prefilled assistant response.
         #Anthropic Claude continues by using the prefilled assistant text.
@@ -184,13 +184,81 @@ def demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id):
                 "messages": messages
             }  
         )  
-
+        print("Sending Request")
         response = bedrock_runtime.invoke_model(body=body, modelId=model_id)
         response_body = json.loads(response.get('body').read())
         response = response_body
    
         print("User turn and prefilled assistant response.")
         print(json.dumps(response, indent=4))
+
+    except ClientError as err:
+        message = err.response["Error"]["Message"]
+        logger.error("A client error occurred: %s", message)
+        print("A client error occured: " + format(message))
+
+
+
+def demo_stream_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id, input_text):
+
+    try:
+
+        system_prompt = "You are a helpful assistant."
+        max_tokens = 1000
+
+        # Prompt with user turn only.
+        user_message =  {"role": "user", "content": "Give me a trivia about pluto"}
+        messages = [user_message]
+
+        #response = generate_message(bedrock_runtime, model_id, system_prompt, messages, max_tokens)
+        #print("User turn only.")
+        #print(json.dumps(response, indent=4))
+
+        # Prompt with both user turn and prefilled assistant response.
+        #Anthropic Claude continues by using the prefilled assistant text.
+        assistant_message =  {"role": "assistant", "content": "<emoji>"}
+        messages = [user_message, assistant_message]
+        #response = generate_message(bedrock_runtime, model_id,system_prompt, messages, max_tokens)
+        body = json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": max_tokens,
+                "messages": [
+                    {
+                        "role": "user", # Valid values are user and assistant. 
+                        "content": [
+                            {"type": "text", "text": input_text}, #Valid values are image and text. 
+                            #{"type": "image", 
+                                #"source": {
+                                    #"type": "base64",
+                                    #"media_type": "image/jpeg", 
+                                    #"data": encoded_string.decode('utf-8')
+                                #}
+                            #}
+                        ]
+                    }
+                ],
+                "temperature": 0.1,
+                "top_p": 0.999,
+                "top_k": 0, #100,000,000
+                #"stop_sequences": [""]
+            })
+
+        response = bedrock_runtime.invoke_model_with_response_stream(body=body, modelId=model_id)
+        #response_body = json.loads(response.get('body').read())
+        #response = response_body
+   
+
+        for event in response.get("body"):
+            chunk = json.loads(event["chunk"]["bytes"])
+
+            if chunk['type'] == 'message_delta':
+                print(f"\nStop reason: {chunk['delta']['stop_reason']}")
+                print(f"Stop sequence: {chunk['delta']['stop_sequence']}")
+                print(f"Output tokens: {chunk['usage']['output_tokens']}")
+
+            if chunk['type'] == 'content_block_delta':
+                if chunk['delta']['type'] == 'text_delta':
+                    print(chunk['delta']['text'], end="")
 
     except ClientError as err:
         message = err.response["Error"]["Message"]
