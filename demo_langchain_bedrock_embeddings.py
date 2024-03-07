@@ -1,11 +1,11 @@
 import os
 
-from langchain.llms import Bedrock
+from langchain_community.llms import Bedrock
 
-from langchain.document_loaders import UnstructuredHTMLLoader
+from langchain_community.document_loaders import UnstructuredHTMLLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import BedrockEmbeddings
-from langchain.vectorstores import Qdrant
+from langchain_community.embeddings import BedrockEmbeddings
+from langchain_community.vectorstores import Qdrant
 
 import qdrant_client
 from langchain.prompts import PromptTemplate
