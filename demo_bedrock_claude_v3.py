@@ -3,6 +3,12 @@ import json
 import config
 import numpy as np
 import cmn_utils
+import logging
+
+from botocore.exceptions import ClientError
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 def run_demo(session):
 
@@ -16,11 +22,15 @@ def run_demo(session):
 
     #demo_invoke_model_anthropic_claude(bedrock_runtime)
 
-    demo_stream_invoke_model_anthropic_claude(bedrock_runtime)
+    #demo_stream_invoke_model_anthropic_claude(bedrock_runtime)
 
     model_id = "amazon.titan-embed-text-v1"
 
     #demo_embedding_calculate_with_cosine_similarity(bedrock_runtime, model_id)
+    # https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html
+    model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
+    #model_id = "anthropic.claude-v2"
+    demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id)
 
 
 def demo_list_foundation_models(bedrock):
@@ -121,3 +131,68 @@ def demo_stream_invoke_model_anthropic_claude(bedrock_runtime, model_id = "anthr
             chunk = event.get("chunk")
             if chunk:
                 print(json.loads(chunk.get("bytes").decode()))
+
+
+#---
+
+def generate_message(bedrock_runtime, model_id, system_prompt, messages, max_tokens):
+
+    body=json.dumps(
+        {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": max_tokens,
+            "system": system_prompt,
+            "messages": messages
+        }  
+    )  
+
+    
+    response = bedrock_runtime.invoke_model(body=body, modelId=model_id)
+    response_body = json.loads(response.get('body').read())
+   
+    return response_body
+
+
+def demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id):
+    """
+    Entrypoint for Anthropic Claude message example.
+    """
+
+    try:
+
+        system_prompt = "You are a helpful assistant."
+        max_tokens = 1000
+
+        # Prompt with user turn only.
+        user_message =  {"role": "user", "content": "Give me a trivia about pluto"}
+        messages = [user_message]
+
+        response = generate_message(bedrock_runtime, model_id, system_prompt, messages, max_tokens)
+        print("User turn only.")
+        print(json.dumps(response, indent=4))
+
+        # Prompt with both user turn and prefilled assistant response.
+        #Anthropic Claude continues by using the prefilled assistant text.
+        assistant_message =  {"role": "assistant", "content": "<emoji>"}
+        messages = [user_message, assistant_message]
+        #response = generate_message(bedrock_runtime, model_id,system_prompt, messages, max_tokens)
+        body = json.dumps(
+            {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": max_tokens,
+                "system": system_prompt,
+                "messages": messages
+            }  
+        )  
+
+        response = bedrock_runtime.invoke_model(body=body, modelId=model_id)
+        response_body = json.loads(response.get('body').read())
+        response = response_body
+   
+        print("User turn and prefilled assistant response.")
+        print(json.dumps(response, indent=4))
+
+    except ClientError as err:
+        message = err.response["Error"]["Message"]
+        logger.error("A client error occurred: %s", message)
+        print("A client error occured: " + format(message))
