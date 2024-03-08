@@ -192,6 +192,12 @@ def demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id):
         print("User turn and prefilled assistant response.")
         print(json.dumps(response, indent=4))
 
+        type = response["content"][0]["type"]
+        text = response["content"][0]["text"]
+        input_tokens = response["usage"]["input_tokens"]
+        output_tokens = response["usage"]["output_tokens"]
+        print(f"type={type} text={text} input_tokens={input_tokens} output_tokens={output_tokens}")
+
     except ClientError as err:
         message = err.response["Error"]["Message"]
         logger.error("A client error occurred: %s", message)
