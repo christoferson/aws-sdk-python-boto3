@@ -11,14 +11,17 @@ def run_demo(session):
     Customer feedback for Sunshine Spa, 123 Main St, Anywhere. Send comments to Alice at sunspa@mail.com. 
     I enjoyed visiting the spa. It was very comfortable but it was also very expensive. The amenities were ok but the service made the spa a great experience.
     """
+    run_demo_detect_dominant_language(comprehend, text)
+    #run_demo_detect_entities(comprehend, text, "en")
 
-    run_demo_detect_entities(comprehend, text)
+def run_demo_detect_dominant_language(comprehend, text):
+    response = comprehend.detect_dominant_language(Text = text)
+    print(json.dumps(response, sort_keys=True, indent=4))
 
-
-def run_demo_detect_entities(comprehend, text):
+def run_demo_detect_entities(comprehend, text, language_code):
 
     response = comprehend.detect_entities(
-        Text=text, LanguageCode="en"
+        Text=text, LanguageCode=language_code
     )
 
     print(json.dumps(response, sort_keys=True, indent=4))
