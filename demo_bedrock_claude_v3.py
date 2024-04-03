@@ -30,7 +30,8 @@ def run_demo(session):
     # https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html
     model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
     #model_id = "anthropic.claude-v2"
-    demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id)
+    #demo_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id)
+    demo_stream_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id, "Give me a trivia about pluto")
     #demo_stream_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id, "Give me a trivia about pluto")
 
 
@@ -213,7 +214,7 @@ def demo_stream_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id, inpu
         max_tokens = 1000
 
         # Prompt with user turn only.
-        user_message =  {"role": "user", "content": "Give me a trivia about pluto"}
+        user_message =  {"role": "user", "content": input_text}
         messages = [user_message]
 
         #response = generate_message(bedrock_runtime, model_id, system_prompt, messages, max_tokens)
@@ -228,6 +229,7 @@ def demo_stream_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id, inpu
         body = json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": max_tokens,
+                "system": system_prompt,
                 "messages": [
                     {
                         "role": "user", # Valid values are user and assistant. 
@@ -260,11 +262,16 @@ def demo_stream_invoke_model_anthropic_claude_v3(bedrock_runtime, model_id, inpu
             if chunk['type'] == 'message_delta':
                 print(f"\nStop reason: {chunk['delta']['stop_reason']}")
                 print(f"Stop sequence: {chunk['delta']['stop_sequence']}")
+
+                #print(f"Input tokens: {chunk['usage']['input_tokens']}")
                 print(f"Output tokens: {chunk['usage']['output_tokens']}")
 
-            if chunk['type'] == 'content_block_delta':
+            elif chunk['type'] == 'content_block_delta':
                 if chunk['delta']['type'] == 'text_delta':
                     print(chunk['delta']['text'], end="")
+
+            else:
+                print(f"\n{chunk['type']} {chunk}\n")
 
     except ClientError as err:
         message = err.response["Error"]["Message"]
