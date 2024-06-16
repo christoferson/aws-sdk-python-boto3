@@ -111,8 +111,20 @@ def search_data(host, awsauth, index_name):
         }
     }
     result = client.search(index=index_name, body=json.dumps(query))
+    print(result)
+
     result_json = json.dumps(result, indent=2)
     print(result_json)
+
+    if "hits" in result:
+        hits = result["hits"]
+        if "hits" in hits:
+            source = hits["hits"][0]["_source"]
+            if "embeddings" in source:
+                source["embeddings"] = []
+                result_json = json.dumps(result, indent=2)
+                print(result_json) #"embeddings"
+    
 
 
 #def main():
