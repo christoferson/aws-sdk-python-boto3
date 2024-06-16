@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-
+# https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-runtime/client/converse_stream.html
 def run_demo(session):
 
     bedrock = session.client('bedrock')
@@ -52,8 +52,7 @@ def run_demo(session):
               format(message))
 
     else:
-        print(
-            f"Finished streaming messages with model {model_id}.")
+        print(f"Finished streaming messages with model {model_id}.")
 
         
 def stream_conversation(bedrock_runtime,
