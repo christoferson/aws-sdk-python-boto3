@@ -131,8 +131,7 @@ def generate_text(bedrock_client, model_id, tool_config, input_text):
         for tool_request in tool_requests:
             if 'toolUse' in tool_request:
                 tool = tool_request['toolUse']
-                logger.info("Requesting tool %s. Request: %s",
-                            tool['name'], tool['toolUseId'])
+                logger.info("Requesting tool %s. Request: %s", tool['name'], tool['toolUseId'])
 
                 if tool['name'] == 'top_song':
                     tool_result = {}
