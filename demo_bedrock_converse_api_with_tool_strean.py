@@ -6,6 +6,8 @@ Shows how to use tools with the Converse API and the Cohere Command R model.
 
 import logging
 import boto3
+import json
+import copy
 
 
 from botocore.exceptions import ClientError
@@ -30,7 +32,7 @@ def run_demo(session):
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-    model_id = "cohere.command-r-v1:0"
+    model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
     input_text = "What is the most popular song on WZPZ?"
 
     tool_config = {
@@ -61,7 +63,49 @@ def run_demo(session):
 
     try:
         print(f"Question: {input_text}")
-        generate_text(bedrock_runtime, model_id, tool_config, input_text)
+
+        message_user = {
+            "role": "user",
+            "content": [{"text": input_text}]
+        }
+
+        messages = [message_user]
+
+        tool_invocation = generate_text(bedrock_runtime, model_id, tool_config, messages)
+        print(tool_invocation)
+
+        if tool_invocation['tool_name'] != None:
+
+            tool_request_message = {
+                "role": "assistant",
+                "content": [
+                    {
+                        "toolUse": {
+                            "toolUseId": tool_invocation['tool_use_id'],
+                            "name": tool_invocation['tool_name'],
+                            "input": json.loads(tool_invocation['tool_arguments'])
+                        }
+                    }
+                ]
+            }
+
+            tool_result_message = {
+                "role": "user",
+                "content": [
+                    {
+                        "toolResult": {
+                                "toolUseId": tool_invocation['tool_use_id'],
+                                "content": [{"json": {"song": "Mysong", "artist": 'My Artist'}}]
+                                #"status": 'error',
+                            }
+
+                    }
+                ]
+            }
+
+            messages = [message_user, tool_request_message, tool_result_message]
+            tool_invocation = generate_text(bedrock_runtime, model_id, tool_config, messages)
+            print(tool_invocation)
 
     except ClientError as err:
         message = err.response['Error']['Message']
@@ -95,7 +139,7 @@ def get_top_song(call_sign):
     return song, artist
 
 
-def generate_text(bedrock_client, model_id, tool_config, input_text):
+def generate_text(bedrock_client, model_id, tool_config, messages):
     """Generates text using the supplied Amazon Bedrock model. If necessary,
     the function handles tool use requests and sends the result to the model.
     Args:
@@ -107,66 +151,70 @@ def generate_text(bedrock_client, model_id, tool_config, input_text):
         Nothing.
     """
 
+    tool_invocation = {
+        "tool_name": None
+    }
+
     logger.info("Generating text with model %s", model_id)
 
-   # Create the initial message from the user input.
-    messages = [{
-        "role": "user",
-        "content": [{"text": input_text}]
-    }]
-
-    response = bedrock_client.converse(
+    response = bedrock_client.converse_stream(
         modelId=model_id,
         messages=messages,
         toolConfig=tool_config
     )
 
-    output_message = response['output']['message']
-    messages.append(output_message)
-    stop_reason = response['stopReason']
+    stream = response.get('stream')
+    tool_input = ""
+    if stream:
+        for event in stream:
 
-    if stop_reason == 'tool_use':
-        # Tool use requested. Call the tool and send the result to the model.
-        tool_requests = response['output']['message']['content']
-        for tool_request in tool_requests:
-            if 'toolUse' in tool_request:
-                tool = tool_request['toolUse']
-                logger.info("Requesting tool %s. Request: %s", tool['name'], tool['toolUseId'])
+            if 'messageStart' in event:
+                print(f"\nRole: {event['messageStart']['role']}")
 
-                if tool['name'] == 'top_song':
-                    tool_result = {}
-                    try:
-                        song, artist = get_top_song(tool['input']['sign'])
-                        tool_result = {
-                            "toolUseId": tool['toolUseId'],
-                            "content": [{"json": {"song": song, "artist": artist}}]
-                        }
-                    except StationNotFoundError as err:
-                        tool_result = {
-                            "toolUseId": tool['toolUseId'],
-                            "content": [{"text":  err.args[0]}],
-                            "status": 'error'
-                        }
+            if 'contentBlockStart' in event:
+                content_block_start = event['contentBlockStart']
+                print(content_block_start)
+                if 'start' in content_block_start:
+                    content_block_start_start = content_block_start['start']
+                    if 'toolUse' in content_block_start_start:
+                        content_block_tool_use = content_block_start_start['toolUse']
+                        tool_use_id = content_block_tool_use['toolUseId']
+                        tool_use_name = content_block_tool_use['name']
+                        print(f"tool_use_id={tool_use_id} tool_use_name={tool_use_name}")
+                        tool_invocation['tool_name'] = tool_use_name
+                        tool_invocation['tool_use_id'] = tool_use_id
 
-                    tool_result_message = {
-                        "role": "user",
-                        "content": [
-                            {
-                                "toolResult": tool_result
+            if 'contentBlockDelta' in event:
+                content_delta = event['contentBlockDelta']['delta']
+                if 'text' in content_delta:
+                    print(content_delta['text'], end="")
+                if 'toolUse' in content_delta:
+                    content_delta_tool_input = content_delta['toolUse']['input']
+                    tool_input += content_delta_tool_input
+                    
 
-                            }
-                        ]
-                    }
-                    messages.append(tool_result_message)
+            if 'messageStop' in event:
+                message_stop_reason = event['messageStop']['stopReason']
+                print(f"\nStop reason: {message_stop_reason}")
+                if "tool_use" == message_stop_reason:
+                    tool_input_json = json.loads(tool_input)
+                    print(tool_input_json) #{'sign': 'WZPZ'}
+                    tool_invocation['tool_arguments'] = tool_input
+                    pass
+                else:
+                    #'end_turn'|'max_tokens'|'stop_sequence'|'content_filtered'
+                    pass
 
-                    # Send the tool result to the model.
-                    response = bedrock_client.converse(
-                        modelId=model_id,
-                        messages=messages,
-                        toolConfig=tool_config
-                    )
-                    output_message = response['output']['message']
+            if 'metadata' in event:
+                metadata = event['metadata']
+                if 'usage' in metadata:
+                    print("\nToken usage")
+                    print(f"Input tokens: {metadata['usage']['inputTokens']}")
+                    print(
+                        f":Output tokens: {metadata['usage']['outputTokens']}")
+                    print(f":Total tokens: {metadata['usage']['totalTokens']}")
+                if 'metrics' in event['metadata']:
+                    print(
+                        f"Latency: {metadata['metrics']['latencyMs']} milliseconds")
 
-    # print the final response from the model.
-    for content in output_message['content']:
-        print(f"{content['text']}")
+    return tool_invocation
