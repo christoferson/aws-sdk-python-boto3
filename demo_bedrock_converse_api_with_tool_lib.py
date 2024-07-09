@@ -3,6 +3,61 @@ import json
 import ast
 import operator as op
 
+
+class AbstractBedrockConverseTool:
+    definition:object
+    def __init__(self, name, definition):
+        self.name = name
+        self.definition = definition
+
+    def matches(self, name):
+        return self.name == name
+    
+    def invoke(self, params):
+        pass
+
+class CalculatorBedrockConverseTool(AbstractBedrockConverseTool):
+    def __init__(self):
+        name = "expr_evaluator"
+        definition = {
+                "toolSpec": {
+                    "name": name,
+                    "description": """Useful for when you need to answer questions about math. This tool is only for math questions and nothing else. Only input
+            math expressions.""",
+                    "inputSchema": {
+                        "json": {
+                            "type": "object",
+                            "properties": {
+                                "expression": {
+                                    "type": "string",
+                                    "description": "Numerical Expresion. Example 47.5 + 98.3."
+                                }
+                            },
+                            "required": [
+                                "expression"
+                            ]
+                        }
+                    }
+                }
+            }
+        super().__init__(name, definition)
+
+    def invoke(self, params):
+        return eval_(ast.parse(params, mode='eval').body)
+
+    def eval_(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, int):
+            return node.value  # integer
+        elif isinstance(node, ast.BinOp):
+            left = eval_(node.left)
+            right = eval_(node.right)
+            return operators[type(node.op)](left, right)
+        elif isinstance(node, ast.UnaryOp):
+            operand = eval_(node.operand)
+            return operators[type(node.op)](operand)
+        else:
+            raise TypeError(node)
+
 ToolIDefinition = {
     "toolSpec": {
         "name": "expr_evaluator",
@@ -44,8 +99,13 @@ def eval_expr(expr):
 
 
 def eval_(node):
-    if isinstance(node, ast.Constant) and isinstance(node.value, int):
-        return node.value  # integer
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, int):
+            return node.value  # integer
+        elif isinstance(node.value, float):
+            return node.value  # integer
+        else:
+            return node.value  # integer
     elif isinstance(node, ast.BinOp):
         left = eval_(node.left)
         right = eval_(node.right)
@@ -54,6 +114,7 @@ def eval_(node):
         operand = eval_(node.operand)
         return operators[type(node.op)](operand)
     else:
+        print(f"UnsupportedType: {type(node)}")
         raise TypeError(node)
 
 #def eval_(node):

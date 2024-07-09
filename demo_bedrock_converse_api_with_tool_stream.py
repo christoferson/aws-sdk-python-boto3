@@ -10,6 +10,7 @@ import json
 import copy
 
 import demo_bedrock_converse_api_with_tool_lib
+from demo_bedrock_converse_api_with_tool_lib import CalculatorBedrockConverseTool
 
 
 from botocore.exceptions import ClientError
@@ -30,8 +31,14 @@ def run_demo(session):
     
     #bedrock = session.client('bedrock')
 
+    
+    #print(f"********************** definition={tool.definition}")
+
     #demo_tool_stream(session, "What is the most popular song on WZPZ?")
-    demo_tool_stream(session, "What is 87 + 5?")
+    #demo_tool_stream(session, "What is 87 + 5?")
+    #demo_tool_stream(session, "What is 87.7383298383+5.378475943548?")
+    demo_tool_stream(session, "What is 3.14 raised to the power of 0.12345?")
+    #demo_tool_stream(session, "What is the diameter of the sun?")
 
 
 def demo_tool_stream(session, input_text):
@@ -40,6 +47,7 @@ def demo_tool_stream(session, input_text):
     bedrock_runtime = session.client('bedrock-runtime', region_name="us-east-1")
 
     model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+    calculator_tool = CalculatorBedrockConverseTool()
 
     tool_config = {
         "tools": [
@@ -64,7 +72,7 @@ def demo_tool_stream(session, input_text):
                 }
             },
             
-            demo_bedrock_converse_api_with_tool_lib.ToolIDefinition
+            calculator_tool.definition
             
         ]
     }
@@ -117,8 +125,8 @@ def demo_tool_stream(session, input_text):
                         }
                     ]
                 }
-            if tool_name == "expr_evaluator":
-                expr_result = demo_bedrock_converse_api_with_tool_lib.eval_expr(tool_args_json['expression'])
+            if calculator_tool.matches(tool_name):
+                expr_result = calculator_tool.invoke(tool_args_json['expression'])
 
                 tool_result_message = {
                     "role": "user",
@@ -166,10 +174,18 @@ def generate_text(bedrock_client, model_id, tool_config, messages):
 
     logger.info("Generating text with model %s", model_id)
 
+    system_prompts = [{"text" : """You are a question answering bot. Do not use any of the provided tools if you have the answer readily available.
+                       """}]
+    inference_config = {"temperature": 0.0}
+    additional_model_fields = {"top_k": 1.0}
+
     response = bedrock_client.converse_stream(
         modelId=model_id,
         messages=messages,
-        toolConfig=tool_config
+        toolConfig=tool_config,
+        system=system_prompts,
+        inferenceConfig=inference_config,
+        additionalModelRequestFields=additional_model_fields
     )
 
     stream = response.get('stream')
