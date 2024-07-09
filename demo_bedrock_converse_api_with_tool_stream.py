@@ -9,6 +9,8 @@ import boto3
 import json
 import copy
 
+import demo_bedrock_converse_api_with_tool_lib
+
 
 from botocore.exceptions import ClientError
 
@@ -28,7 +30,8 @@ def run_demo(session):
     
     #bedrock = session.client('bedrock')
 
-    demo_tool_stream(session, "What is the most popular song on WZPZ?")
+    #demo_tool_stream(session, "What is the most popular song on WZPZ?")
+    demo_tool_stream(session, "What is 87 + 5?")
 
 
 def demo_tool_stream(session, input_text):
@@ -59,7 +62,10 @@ def demo_tool_stream(session, input_text):
                         }
                     }
                 }
-            }
+            },
+            
+            demo_bedrock_converse_api_with_tool_lib.ToolIDefinition
+            
         ]
     }
     
@@ -91,24 +97,42 @@ def demo_tool_stream(session, input_text):
                     }
                 ]
             }
-            song = ""
-            artist = ""
+
             if tool_name == "top_song":
-                song, artist = get_top_song(tool_args_json['sign'])
+                song = ""
+                artist = ""
+                if tool_name == "top_song":
+                    song, artist = get_top_song(tool_args_json['sign'])
 
-            tool_result_message = {
-                "role": "user",
-                "content": [
-                    {
-                        "toolResult": {
-                                "toolUseId": tool_invocation['tool_use_id'],
-                                "content": [{"json": {"song": song, "artist": artist}}]
-                                #"status": 'error',
-                            }
+                tool_result_message = {
+                    "role": "user",
+                    "content": [
+                        {
+                            "toolResult": {
+                                    "toolUseId": tool_invocation['tool_use_id'],
+                                    "content": [{"json": {"song": song, "artist": artist}}]
+                                    #"status": 'error',
+                                }
 
-                    }
-                ]
-            }
+                        }
+                    ]
+                }
+            if tool_name == "expr_evaluator":
+                expr_result = demo_bedrock_converse_api_with_tool_lib.eval_expr(tool_args_json['expression'])
+
+                tool_result_message = {
+                    "role": "user",
+                    "content": [
+                        {
+                            "toolResult": {
+                                    "toolUseId": tool_invocation['tool_use_id'],
+                                    "content": [{"json": {"expr_result": expr_result}}]
+                                    #"status": 'error',
+                                }
+
+                        }
+                    ]
+                }
 
             messages = [message_user, tool_request_message, tool_result_message]
             tool_invocation = generate_text(bedrock_runtime, model_id, tool_config, messages)
