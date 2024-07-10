@@ -37,7 +37,8 @@ def run_demo(session):
     #demo_tool_stream(session, "What is the most popular song on WZPZ?")
     #demo_tool_stream(session, "What is 87 + 5?")
     #demo_tool_stream(session, "What is 87.7383298383+5.378475943548?")
-    demo_tool_stream(session, "What is 3.14 raised to the power of 0.12345?")
+    #demo_tool_stream(session, "What is 3.14 raised to the power of 0.12345?")
+    demo_tool_stream(session, "What is 3.14 raised to the power of 0.12345 round to the nearest 3 decimal places?")
     #demo_tool_stream(session, "What is the diameter of the sun?")
 
 
